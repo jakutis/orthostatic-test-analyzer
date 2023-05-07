@@ -3,9 +3,19 @@
 
 __metadata:
   version: 6
+  cacheKey: 8
+
+"@garmin-fit/sdk@npm:^21.107.0":
+  version: 21.107.0
+  resolution: "@garmin-fit/sdk@npm:21.107.0"
+  checksum: 295e1df27fad4119985a79db42b3392421b550f5534b936086b6a8df9267ab1e8d33b28f34a0ea85c808bafe861c6f8cfa377e7b716549c64196175fa8d9dc2e
+  languageName: node
+  linkType: hard
 
 "root-workspace-0b6124@workspace:.":
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
+  dependencies:
+    "@garmin-fit/sdk": ^21.107.0
   languageName: unknown
   linkType: soft
