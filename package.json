@@ -1,6 +1,23 @@
 {
+  "name": "orthostatic-test-analyzer",
+  "version": "1.0.0",
+  "description": "Orthostatic Test Analyzer takes a .FIT file and outputs the orthostatic test results",
   "packageManager": "yarn@3.5.1",
+  "main": "./dist/index.js",
+  "bin": "./bin.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "./bin.js"
+  },
+  "files": [
+    "./package.json",
+    "./bin.js",
+    "./dist"
+  ],
   "dependencies": {
     "@garmin-fit/sdk": "^21.107.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.4"
   }
 }
