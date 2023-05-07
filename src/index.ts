@@ -1,3 +1,3 @@
-export const cli = async () => {
+export const cli: () => Promise<void> = async () => {
   console.log('Orthostatic Test Analyzer')
 }
