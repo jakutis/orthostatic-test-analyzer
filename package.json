@@ -2,6 +2,7 @@
   "name": "orthostatic-test-analyzer",
   "version": "1.0.3",
   "description": "Orthostatic Test Analyzer takes the latest Orthostatic Test activity from Garmin Connect, analyzes it and sends the result to InfluxDB",
+  "license": "MIT",
   "packageManager": "yarn@3.5.1",
   "main": "./dist/index.js",
   "bin": "./bin.js",
@@ -12,6 +13,7 @@
   "files": [
     "./package.json",
     "./README.md",
+    "./LICENSE",
     "./bin.js",
     "./dist"
   ],
