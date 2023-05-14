@@ -80,9 +80,8 @@ const read = (fitLaps: FitLap[], hrv: Array<{ time: Array<number | null> }>, ses
   }
 }
 
-const downloadLatestActivity = async (activityName: string, dir: string, sessionFile: string, garminConfigFile: string): Promise<void> => {
-  const GCClient = new GarminConnect()
-  const { username, password } = JSON.parse(String(await readFile(garminConfigFile)))
+const downloadLatestActivity = async (credentials: { username: string, password: string }, activityName: string, dir: string, sessionFile: string): Promise<void> => {
+  const GCClient = new GarminConnect(credentials)
   GCClient.onSessionChange((session) => {
     writeFile(sessionFile, JSON.stringify(session)).catch(err => { console.log({ err }) })
   })
@@ -91,7 +90,7 @@ const downloadLatestActivity = async (activityName: string, dir: string, session
     session = JSON.parse(String(await readFile(sessionFile)))
   } catch {
   }
-  await GCClient.restoreOrLogin(session, username, password)
+  await GCClient.restoreOrLogin(session, credentials.username, credentials.password)
 
   for (let i = 0; ; i++) {
     const activities = await GCClient.getActivities(i, 1)
@@ -138,13 +137,12 @@ export const cli: () => Promise<void> = async () => {
     grafanaOrganization,
     grafanaBucket,
     garminActivityName,
-    garminSessionFile
+    garminSessionFile,
+    garminCredentials
   } = JSON.parse(String(await readFile(configFile)))
 
-  const garminConfigFile = './garmin.config.json'
-  await access(garminConfigFile, fsConstants.R_OK)
   const dir = await mkdtemp(join(tmpdir(), 'ota-'))
-  await downloadLatestActivity(garminActivityName, dir, garminSessionFile, garminConfigFile)
+  await downloadLatestActivity(garminCredentials, garminActivityName, dir, garminSessionFile)
   const bytes = await getFit(dir)
   await rm(dir, { recursive: true })
   console.log('Measurement taken.')
