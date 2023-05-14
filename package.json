@@ -1,6 +1,6 @@
 {
   "name": "orthostatic-test-analyzer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Orthostatic Test Analyzer takes the latest Orthostatic Test activity from Garmin Connect, analyzes it and sends the result to InfluxDB",
   "packageManager": "yarn@3.5.1",
   "main": "./dist/index.js",
