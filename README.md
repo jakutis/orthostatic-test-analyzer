@@ -1,3 +1,3 @@
 # Orthostatic Test Analyzer
 
-Takes a .FIT file and outputs the orthostatic test results.
+Orthostatic Test Analyzer takes the latest Orthostatic Test activity from Garmin Connect, analyzes it and sends the result to InfluxDB

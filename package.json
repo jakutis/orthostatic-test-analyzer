@@ -1,7 +1,7 @@
 {
   "name": "orthostatic-test-analyzer",
   "version": "1.0.0",
-  "description": "Orthostatic Test Analyzer takes a .FIT file and outputs the orthostatic test results",
+  "description": "Orthostatic Test Analyzer takes the latest Orthostatic Test activity from Garmin Connect, analyzes it and sends the result to InfluxDB",
   "packageManager": "yarn@3.5.1",
   "main": "./dist/index.js",
   "bin": "./bin.js",
@@ -16,9 +16,13 @@
     "./dist"
   ],
   "dependencies": {
-    "@garmin-fit/sdk": "^21.107.0"
+    "@garmin-fit/sdk": "^21.107.0",
+    "@influxdata/influxdb-client": "^1.33.2",
+    "garmin-connect": "^1.4.6",
+    "jszip": "^3.10.1"
   },
   "devDependencies": {
+    "@types/node": "^20.1.0",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "eslint": "^8.0.1",
     "eslint-config-standard-with-typescript": "^34.0.1",
