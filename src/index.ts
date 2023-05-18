@@ -80,7 +80,16 @@ const read = (fitLaps: FitLap[], hrv: Array<{ time: Array<number | null> }>, ses
   }
 }
 
-const downloadLatestActivity = async (credentials: { username: string, password: string }, activityName: string, dir: string, sessionFile: string): Promise<void> => {
+const tryOrUndefined = async <T>(fn: () => Promise<T>): Promise<T | undefined> => {
+  try {
+    return await fn()
+  } catch {}
+}
+
+const downloadLatestActivity = async (credentials: { username: string, password: string }, activityName: string, dir: string, sessionFile: string, lastKnownActivityFile: string): Promise<boolean> => {
+  const lastKnownActivity = await tryOrUndefined(async () => {
+    return Number(await readFile(lastKnownActivityFile))
+  })
   const GCClient = new GarminConnect(credentials)
   GCClient.onSessionChange((session) => {
     writeFile(sessionFile, JSON.stringify(session)).catch(err => { console.log({ err }) })
@@ -92,15 +101,30 @@ const downloadLatestActivity = async (credentials: { username: string, password:
   }
   await GCClient.restoreOrLogin(session, credentials.username, credentials.password)
 
+  let newLastKnownActivity
+  let state: 'searching' | 'found' | 'notfound' = 'searching'
   for (let i = 0; ; i++) {
+    if (state !== 'searching') {
+      break
+    }
     const activities = await GCClient.getActivities(i, 1)
     for (const activity of activities) {
-      if (activity.activityName === activityName) {
+      if (state !== 'searching') {
+        break
+      }
+      if (newLastKnownActivity === undefined) {
+        newLastKnownActivity = activity.activityId
+      }
+      if (activity.activityId === lastKnownActivity) {
+        state = 'notfound'
+      } else if (activity.activityName === activityName) {
         await GCClient.downloadOriginalActivityData(activity, dir)
-        return
+        state = 'found'
       }
     }
   }
+  await writeFile(lastKnownActivityFile, String(newLastKnownActivity))
+  return state === 'found'
 }
 
 const getFirstFile = async (dir: string, suffix: string): Promise<string | undefined> => {
@@ -138,11 +162,16 @@ export const cli: () => Promise<void> = async () => {
     grafanaBucket,
     garminActivityName,
     garminSessionFile,
+    garminLastKnownActivityFile,
     garminCredentials
   } = JSON.parse(String(await readFile(configFile)))
 
   const dir = await mkdtemp(join(tmpdir(), 'ota-'))
-  await downloadLatestActivity(garminCredentials, garminActivityName, dir, garminSessionFile)
+  const downloaded = await downloadLatestActivity(garminCredentials, garminActivityName, dir, garminSessionFile, garminLastKnownActivityFile)
+  if (!downloaded) {
+    console.log('No new activity downloaded.')
+    return
+  }
   const bytes = await getFit(dir)
   await rm(dir, { recursive: true })
   console.log('Measurement taken.')
