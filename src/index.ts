@@ -86,7 +86,7 @@ const tryOrUndefined = async <T>(fn: () => Promise<T>): Promise<T | undefined> =
   } catch {}
 }
 
-const downloadLatestActivity = async (credentials: { username: string, password: string }, activityName: string, dir: string, sessionFile: string, lastKnownActivityFile: string): Promise<boolean> => {
+const downloadLatestActivity = async (credentials: { username: string, password: string }, activityName: string, sessionFile: string, lastKnownActivityFile: string): Promise<Buffer | undefined> => {
   const lastKnownActivity = await tryOrUndefined(async () => {
     return Number(await readFile(lastKnownActivityFile))
   })
@@ -102,29 +102,32 @@ const downloadLatestActivity = async (credentials: { username: string, password:
   await GCClient.restoreOrLogin(session, credentials.username, credentials.password)
 
   let newLastKnownActivity
-  let state: 'searching' | 'found' | 'notfound' = 'searching'
+  let state: { type: 'searching' } | { type: 'found', bytes: Buffer } | { type: 'notfound' } = { type: 'searching' }
   for (let i = 0; ; i++) {
-    if (state !== 'searching') {
+    if (state.type !== 'searching') {
       break
     }
     const activities = await GCClient.getActivities(i, 1)
     for (const activity of activities) {
-      if (state !== 'searching') {
+      if (state.type !== 'searching') {
         break
       }
       if (newLastKnownActivity === undefined) {
         newLastKnownActivity = activity.activityId
       }
       if (activity.activityId === lastKnownActivity) {
-        state = 'notfound'
+        state = { type: 'notfound' }
       } else if (activity.activityName === activityName) {
+        const dir = await mkdtemp(join(tmpdir(), 'ota-'))
         await GCClient.downloadOriginalActivityData(activity, dir)
-        state = 'found'
+        const bytes = await getFit(dir)
+        await rm(dir, { recursive: true })
+        state = { type: 'found', bytes }
       }
     }
   }
   await writeFile(lastKnownActivityFile, String(newLastKnownActivity))
-  return state === 'found'
+  return state.type === 'found' ? state.bytes : undefined
 }
 
 const getFirstFile = async (dir: string, suffix: string): Promise<string | undefined> => {
@@ -166,14 +169,11 @@ export const cli: () => Promise<void> = async () => {
     garminCredentials
   } = JSON.parse(String(await readFile(configFile)))
 
-  const dir = await mkdtemp(join(tmpdir(), 'ota-'))
-  const downloaded = await downloadLatestActivity(garminCredentials, garminActivityName, dir, garminSessionFile, garminLastKnownActivityFile)
-  if (!downloaded) {
+  const bytes = await downloadLatestActivity(garminCredentials, garminActivityName, garminSessionFile, garminLastKnownActivityFile)
+  if (bytes == null) {
     console.log('No new activity downloaded.')
     return
   }
-  const bytes = await getFit(dir)
-  await rm(dir, { recursive: true })
   console.log('Measurement taken.')
 
   const { Decoder, Stream } = await import('@garmin-fit/sdk')
