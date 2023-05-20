@@ -10,6 +10,9 @@ interface FitLap { timestamp: Date, startTime: Date, totalElapsedTime: number }
 interface Lap {start: number, finish: number, duration: number, rrs: number[], avgHR: number, rmssd: number}
 
 const rmssd = (array: number[]): number => {
+  if (array.length < 2) {
+    return 0
+  }
   let sum = 0
   for (let i = 1; i < array.length; i++) {
     const diff = array[i] - array[i - 1]
