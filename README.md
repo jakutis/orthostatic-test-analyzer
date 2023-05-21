@@ -1,6 +1,6 @@
 # Orthostatic Test Analyzer
 
-Orthostatic Test Analyzer takes the latest Orthostatic Test activity from Garmin Connect, analyzes it and sends the result to InfluxDB
+Orthostatic Test Analyzer takes the latest Orthostatic Test activity from Garmin Connect, analyzes it and sends the result to InfluxDB and intervals.icu
 
 The activity must contain HRV data, therefore a heart rate strap is required.
 The activity must have at least 5 laps.
@@ -25,8 +25,11 @@ orthostatic-test-analyzer path/to/config/file
   "grafanaToken": "abc12abc12abc12abc12abc1233333abc123",
   "grafanaOrganization": "someorg",
   "grafanaBucket": "somebucket",
+  "intervalsIcuKey": "key",
+  "intervalsIcuAthlete": "i12345",
   "garminActivityName": "Orthostatic Test",
   "garminSessionFile": "/home/username/.garminSession",
+  "garminLastKnownActivityFile": "/home/username/.garminLastKnownActivity",
   "garminCredentials": {
     "username": "user@example.org",
     "password": "g00dpassw0rd"

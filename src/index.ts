@@ -44,6 +44,13 @@ const readLaps = (fitLaps: FitLap[], rrs: number[]): Lap[] => fitLaps.reduce(({ 
 
 const read = (fitLaps: FitLap[], hrv: Array<{ time: Array<number | null> }>, sessions: Array<{ event: string, eventType: string, startTime: Date }>): {
   start: number
+  measurementsByType: {
+    moreThanMax: Lap
+    standingStabilization: Lap
+    standing: Lap
+    lying: Lap
+    lyingStabilization: Lap
+  }
   measurements: Array<{
     type: 'moreThanMax' | 'lyingStabilization' | 'lying' | 'standingStabilization' | 'standing'
     lap: Lap
@@ -58,6 +65,13 @@ const read = (fitLaps: FitLap[], hrv: Array<{ time: Array<number | null> }>, ses
   const [moreThanMax, lyingStabilization, lying, standingStabilization, standing] = readLaps(fitLaps, rrs)
   return {
     start: startTime.getTime(),
+    measurementsByType: {
+      moreThanMax,
+      standingStabilization,
+      standing,
+      lying,
+      lyingStabilization
+    },
     measurements: [
       {
         type: 'moreThanMax',
@@ -166,6 +180,8 @@ export const cli: () => Promise<void> = async () => {
     grafanaToken,
     grafanaOrganization,
     grafanaBucket,
+    intervalsIcuKey,
+    intervalsIcuAthlete,
     garminActivityName,
     garminSessionFile,
     garminLastKnownActivityFile,
@@ -217,5 +233,30 @@ export const cli: () => Promise<void> = async () => {
     writeApi.writePoint(point)
   }
   await writeApi.close()
-  console.log('Measurement sent.')
+  console.log('Measurement sent to InfluxDB.')
+
+  const date = new Date(result.start).toISOString().slice(0, 10)
+  const auth = Buffer.from(`API_KEY:${String(intervalsIcuKey)}`).toString('base64')
+  const url = `https://intervals.icu/api/v1/athlete/${String(intervalsIcuAthlete)}/wellness/${date}`
+  const method = 'PUT'
+  const body = JSON.stringify({
+    OrthostaticHrLying: result.measurementsByType.lying.avgHR,
+    OrthostaticHrvLying: result.measurementsByType.lying.rmssd,
+    OrthostaticHrStanding: result.measurementsByType.standing.avgHR,
+    OrthostaticHrvStanding: result.measurementsByType.standing.rmssd
+  })
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: 'Basic ' + auth
+  }
+  const response = await fetch(url, {
+    method,
+    headers,
+    body
+  })
+  if (response.status !== 200) {
+    console.log(`Measurement sending to intervals.icu failed with status ${response.status}`)
+  } else {
+    console.log('Measurement sent to intervals.icu.')
+  }
 }
